@@ -12,17 +12,31 @@ import os
 import os.path
 
 IMG_EXTENSIONS = [
-    '.jpg', '.JPG', '.jpeg', '.JPEG',
-    '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
+    '.jpg',
+    '.JPG',
+    '.jpeg',
+    '.JPEG',
+    '.png',
+    '.PNG',
+    '.ppm',
+    '.PPM',
+    '.bmp',
+    '.BMP',
 ]
+
+
 def find_classes(dir):
-    classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+    classes = [
+        d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))
+    ]
     classes.sort()
     class_to_idx = {classes[i]: i for i in range(len(classes))}
     return classes, class_to_idx
 
+
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
+
 
 def make_dataset(dir, class_to_idx):
     images = []
@@ -42,9 +56,9 @@ def make_dataset(dir, class_to_idx):
     return images
 
 
-
 def default_loader(path):
     return Image.open(path).convert('RGB')
+
 
 class ImageFolder(data.Dataset):
     """A generic data loader where the images are arranged in this way: ::
@@ -66,13 +80,19 @@ class ImageFolder(data.Dataset):
         class_to_idx (dict): Dict with items (class_name, class_index).
         imgs (list): List of (image path, class_index) tuples
     """
-
-    def __init__(self, root, transform=None, target_transform=None,return_paths=False, loader=default_loader):
+    def __init__(self,
+                 root,
+                 transform=None,
+                 target_transform=None,
+                 return_paths=False,
+                 loader=default_loader):
         classes, class_to_idx = find_classes(root)
         imgs = make_dataset(root, class_to_idx)
         if len(imgs) == 0:
-            raise(RuntimeError("Found 0 images in subfolders of: " + root + "\n"
-                               "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))
+            raise (RuntimeError("Found 0 images in subfolders of: " + root +
+                                "\n"
+                                "Supported image extensions are: " +
+                                ",".join(IMG_EXTENSIONS)))
 
         self.root = root
         self.imgs = imgs
@@ -95,7 +115,7 @@ class ImageFolder(data.Dataset):
         if self.transform is not None:
             img = self.transform(img)
         if self.return_paths:
-            return img, target,path
+            return img, target, path
         if self.target_transform is not None:
             target = self.target_transform(target)
         return img, target

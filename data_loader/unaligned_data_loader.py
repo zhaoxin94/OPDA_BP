@@ -1,12 +1,5 @@
-import random
 import torch.utils.data
-import torchvision.transforms as transforms
-#from base_data_loader import BaseDataLoader
-#import torchnet as tnt
-# pip install future --upgrade
 from builtins import object
-from pdb import set_trace as st
-import torch.utils.data as data_utils
 
 
 class PairedData(object):
@@ -50,15 +43,16 @@ class PairedData(object):
             raise StopIteration()
         else:
             self.iter += 1
-            return {'S': A, 'S_label': A_paths,
-                    'T': B, 'T_label': B_paths}
+            return {'S': A, 'S_label': A_paths, 'T': B, 'T_label': B_paths}
 
 
 class UnalignedDataLoader():
     def initialize(self, A, B, batchSize):
         # BaseDataLoader.initialize(self)
-        dataset_A = A#tnt.dataset.TensorDataset([A['features'], A['targets']])
-        dataset_B = B#tnt.dataset.TensorDataset([B['features'], B['targets']])
+        # tnt.dataset.TensorDataset([A['features'], A['targets']])
+        dataset_A = A
+        # tnt.dataset.TensorDataset([B['features'], B['targets']])
+        dataset_B = B
         data_loader_A = torch.utils.data.DataLoader(
             dataset_A,
             batch_size=batchSize,
@@ -75,8 +69,9 @@ class UnalignedDataLoader():
 
         self.dataset_A = dataset_A
         self.dataset_B = dataset_B
-        flip = False  # opt.isTrain and not opt.no_flip
-        self.paired_data = PairedData(data_loader_A, data_loader_B, float("inf"))
+        # flip = False  # opt.isTrain and not opt.no_flip
+        self.paired_data = PairedData(data_loader_A, data_loader_B,
+                                      float("inf"))
 
     def name(self):
         return 'UnalignedDataLoader'
@@ -85,4 +80,5 @@ class UnalignedDataLoader():
         return self.paired_data
 
     def __len__(self):
-        return min(max(len(self.dataset_A), len(self.dataset_B)), self.opt.max_dataset_size)
+        return min(max(len(self.dataset_A), len(self.dataset_B)),
+                   self.opt.max_dataset_size)

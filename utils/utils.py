@@ -1,6 +1,8 @@
 import torch.optim as opt
-from models.basenet import *
+from models.basenet import AlexBase, VGGBase, Classifier, ResBase, \
+    ResClassifier
 import torch
+
 
 def get_model(net, num_class=13, unit_size=100):
     if net == 'alex':
@@ -17,14 +19,26 @@ def get_model(net, num_class=13, unit_size=100):
 
 def get_optimizer_visda(lr, G, C, update_lower=False):
     if not update_lower:
-        params = list(list(G.linear1.parameters()) + list(G.linear2.parameters()) + list(
-            G.bn1.parameters()) + list(G.bn2.parameters())) #+ list(G.bn4.parameters()) + list(
-            #G.bn3.parameters()) + list(G.linear3.parameters()) + list(G.linear4.parameters()))
+        params = list(
+            list(G.linear1.parameters()) + list(G.linear2.parameters()) +
+            list(G.bn1.parameters()) +
+            list(G.bn2.parameters()))  # + list(G.bn4.parameters()) + list(
+        # G.bn3.parameters()) + list(G.linear3.parameters()) +
+        # list(G.linear4.parameters()))
     else:
         params = G.parameters()
-    optimizer_g = opt.SGD(params, lr=lr, momentum=0.9, weight_decay=0.0005,nesterov=True)
-    optimizer_c = opt.SGD(list(C.parameters()), momentum=0.9, lr=lr,
-                          weight_decay=0.0005, nesterov=True)
+
+    # TODO: zhaoxin: the lower layer should use diffierent learning rate
+    optimizer_g = opt.SGD(params,
+                          lr=lr,
+                          momentum=0.9,
+                          weight_decay=0.0005,
+                          nesterov=True)
+    optimizer_c = opt.SGD(list(C.parameters()),
+                          momentum=0.9,
+                          lr=lr,
+                          weight_decay=0.0005,
+                          nesterov=True)
     return optimizer_g, optimizer_c
 
 
@@ -52,11 +66,12 @@ def load_model(model_g, model_c, load_path):
 
 
 def adjust_learning_rate(optimizer, lr, batch_id, max_id, epoch, max_epoch):
-    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    """Sets the learning rate to the initial LR decayed by
+    10 every 30 epochs"""
     beta = 0.75
     alpha = 10
     p = min(1, (batch_id + max_id * epoch) / float(max_id * max_epoch))
-    lr = lr / (1 + alpha * p) ** (beta)  # min(1, 2 - epoch/float(20))
+    lr = lr / (1 + alpha * p)**(beta)  # min(1, 2 - epoch/float(20))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
     return lr

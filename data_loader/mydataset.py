@@ -5,13 +5,23 @@ import os.path
 import numpy as np
 
 IMG_EXTENSIONS = [
-    '.jpg', '.JPG', '.jpeg', '.JPEG',
-    '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
+    '.jpg',
+    '.JPG',
+    '.jpeg',
+    '.JPEG',
+    '.png',
+    '.PNG',
+    '.ppm',
+    '.PPM',
+    '.bmp',
+    '.BMP',
 ]
 
 
 def find_classes(dir):
-    classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+    classes = [
+        d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))
+    ]
     classes.sort()
     class_to_idx = {classes[i]: i for i in range(len(classes))}
     return classes, class_to_idx
@@ -71,6 +81,8 @@ def make_dataset_nolist(image_list):
         # print(label_list)
     image_index = image_index[selected_list]
     return image_index, label_list
+
+
 class ImageFolder(data.Dataset):
     """A generic data loader where the images are arranged in this way: ::
         root/dog/xxx.png
@@ -81,49 +93,59 @@ class ImageFolder(data.Dataset):
         root/cat/asd932_.png
     Args:
         root (string): Root directory path.
-        transform (callable, optional): A function/transform that  takes in an PIL image
+        transform (callable, optional): A function/transform that \
+            takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
-        target_transform (callable, optional): A function/transform that takes in the
+        target_transform (callable, optional): A function/transform that takes\
+             in the
             target and transforms it.
-        loader (callable, optional): A function to load an image given its path.
+        loader (callable, optional): A function to load an image given \
+            its path.
      Attributes:
         classes (list): List of the class names.
         class_to_idx (dict): Dict with items (class_name, class_index).
         imgs (list): List of (image path, class_index) tuples
     """
+    def __init__(self,
+                 image_list,
+                 transform=None,
+                 target_transform=None,
+                 return_paths=False,
+                 loader=default_loader,
+                 train=False):
+        # classes, class_to_idx = find_classes(root)
 
-    def __init__(self, image_list, transform=None, target_transform=None, return_paths=False,
-                 loader=default_loader,train=False):
-        #classes, class_to_idx = find_classes(root)
-
-        #imgs = make_dataset(root, class_to_idx)
-        #if len(imgs) == 0:
-        #    raise (RuntimeError("Found 0 images in subfolders of: " + root + "\n"
-        #                                                                     "Supported image extensions are: " + ",".join(
+        # imgs = make_dataset(root, class_to_idx)
+        # if len(imgs) == 0:
+        #    raise (RuntimeError("Found 0 images in subfolders \
+        # of: " + root + "\n"
+        #  "Supported image extensions are: " + ",".join(
         #        IMG_EXTENSIONS)))
         imgs, labels = make_dataset_nolist(image_list)
-        #self.root = root
+        # self.root = root
         self.imgs = imgs
-        self.labels= labels
-        #self.classes = classes
-        #self.class_to_idx = class_to_idx
+        self.labels = labels
+        # self.classes = classes
+        # self.class_to_idx = class_to_idx
         self.transform = transform
         self.target_transform = target_transform
         self.loader = loader
         self.return_paths = return_paths
         self.train = train
+
     def __getitem__(self, index):
         """
         Args:
             index (int): Index
         Returns:
-            tuple: (image, target) where target is class_index of the target class.
+            tuple: (image, target) where target is class_index \
+                of the target class.
         """
 
         path = self.imgs[index]
         target = self.labels[index]
         img = self.loader(path)
-        #if self.train:
+        # if self.train:
         #    img = augment_images(img)
 
         img = self.transform(img)
@@ -139,8 +161,14 @@ class ImageFolder(data.Dataset):
 
 
 class ImageFilelist(data.Dataset):
-    def __init__(self, root, flist, transform=None, target_transform=None, flist_reader=default_flist_reader,
-                 loader=default_loader, return_paths=True):
+    def __init__(self,
+                 root,
+                 flist,
+                 transform=None,
+                 target_transform=None,
+                 flist_reader=default_flist_reader,
+                 loader=default_loader,
+                 return_paths=True):
         self.root = root
         self.imlist = flist_reader(flist)
         self.transform = transform
@@ -150,7 +178,7 @@ class ImageFilelist(data.Dataset):
 
     def __getitem__(self, index):
         impath, target = self.imlist[index]
-        impath = impath.replace('other','unk')
+        impath = impath.replace('other', 'unk')
         img = self.loader(os.path.join(self.root, impath))
         if self.transform is not None:
             img = self.transform(img)

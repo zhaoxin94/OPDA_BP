@@ -14,8 +14,10 @@ class GradReverse(Function):
     def backward(self, grad_output):
         return (grad_output * -self.lambd)
 
+
 def grad_reverse(x, lambd=1.0):
     return GradReverse(lambd)(x)
+
 
 class VGGBase(nn.Module):
     # Model VGG
@@ -53,7 +55,7 @@ class AlexBase(nn.Module):
         model_ft = models.alexnet(pretrained=True)
         mod = []
         print(model_ft)
-        for i in xrange(18):
+        for i in range(18):
             if i < 13:
                 mod.append(model_ft.features[i])
         mod_upper = list(model_ft.classifier.children())
@@ -92,6 +94,7 @@ class Classifier(nn.Module):
 
     def set_lambda(self, lambd):
         self.lambd = lambd
+
     def forward(self, x, dropout=False, return_feat=False, reverse=False):
         if reverse:
             x = grad_reverse(x, self.lambd)
@@ -103,6 +106,7 @@ class Classifier(nn.Module):
         if return_feat:
             return x, feat
         return x
+
 
 class ResBase(nn.Module):
     def __init__(self, option='resnet18', pret=True, unit_size=100):
@@ -129,7 +133,8 @@ class ResBase(nn.Module):
         self.bn3 = nn.BatchNorm1d(unit_size, affine=True)
         self.linear4 = nn.Linear(unit_size, unit_size)
         self.bn4 = nn.BatchNorm1d(unit_size, affine=True)
-    def forward(self, x,reverse=False):
+
+    def forward(self, x, reverse=False):
 
         x = self.features(x)
         x = x.view(x.size(0), self.dim)
@@ -137,22 +142,23 @@ class ResBase(nn.Module):
         if reverse:
             x = x.detach()
 
-
-        x = F.dropout(F.relu(self.bn1(self.linear1(x))), training=self.training)
-        x = F.dropout(F.relu(self.bn2(self.linear2(x))), training=self.training)
-        #x = F.dropout(F.relu(self.bn3(self.linear3(x))), training=self.training)
-        #x = F.dropout(F.relu(self.bn4(self.linear4(x))), training=self.training)
-        #x = F.relu(self.bn1(self.linear1(x)))
-        #x = F.relu(self.bn2(self.linear2(x)))
+        x = F.dropout(F.relu(self.bn1(self.linear1(x))),
+                      training=self.training)
+        x = F.dropout(F.relu(self.bn2(self.linear2(x))),
+                      training=self.training)
+        # x = F.dropout(F.relu(self.bn3(self.linear3(x))),
+        #  training=self.training)
+        # x = F.dropout(F.relu(self.bn4(self.linear4(x))),
+        #  training=self.training)
+        # x = F.relu(self.bn1(self.linear1(x)))
+        # x = F.relu(self.bn2(self.linear2(x)))
         return x
 
 
 class ResClassifier(nn.Module):
     def __init__(self, num_classes=12, unit_size=1000):
         super(ResClassifier, self).__init__()
-        self.classifier = nn.Sequential(
-            nn.Linear(unit_size, num_classes)
-        )
+        self.classifier = nn.Sequential(nn.Linear(unit_size, num_classes))
 
     def set_lambda(self, lambd):
         self.lambd = lambd

@@ -1,40 +1,79 @@
 from __future__ import print_function
 import argparse
-from utils.utils import *
-import torch.nn.functional as F
-from torch.autograd import Variable
-import torchvision.transforms as transforms
-from data_loader.get_loader import get_loader
 import numpy as np
 import os
+import torch
+import torch.nn.functional as F
+import torchvision.transforms as transforms
+from torch import nn
+from utils.utils import get_model, get_optimizer_visda, save_model, bce_loss
+from torch.autograd import Variable
+from data_loader.get_loader import get_loader
 
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch Openset DA')
-parser.add_argument('--batch-size', type=int, default=32, metavar='N',
+parser.add_argument('--batch-size',
+                    type=int,
+                    default=32,
+                    metavar='N',
                     help='input batch size for training (default: 64)')
-parser.add_argument('--epochs', type=int, default=1000, metavar='N',
+parser.add_argument('--epochs',
+                    type=int,
+                    default=1000,
+                    metavar='N',
                     help='number of epochs to train (default: 10)')
-parser.add_argument('--log-interval', type=int, default=100, metavar='N',
-                    help='how many batches to wait before logging training status')
-parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
+parser.add_argument(
+    '--log-interval',
+    type=int,
+    default=100,
+    metavar='N',
+    help='how many batches to wait before logging training status')
+parser.add_argument('--lr',
+                    type=float,
+                    default=0.001,
+                    metavar='LR',
                     help='learning rate (default: 0.001)')
-parser.add_argument('--net', type=str, default='resnet152', metavar='B',
+parser.add_argument('--net',
+                    type=str,
+                    default='resnet152',
+                    metavar='B',
                     help='which network alex,vgg,res?')
-parser.add_argument('--save', action='store_true', default=False,
+parser.add_argument('--save',
+                    action='store_true',
+                    default=False,
                     help='save model or not')
-parser.add_argument('--save_path', type=str, default='checkpoint/checkpoint', metavar='B',
+parser.add_argument('--save_path',
+                    type=str,
+                    default='checkpoint/checkpoint',
+                    metavar='B',
                     help='checkpoint path')
-parser.add_argument('--source_path', type=str, default='./utils/source_list.txt', metavar='B',
+parser.add_argument('--source_path',
+                    type=str,
+                    default='./utils/source_list.txt',
+                    metavar='B',
                     help='checkpoint path')
-parser.add_argument('--target_path', type=str, default='./utils/target_list.txt', metavar='B',
+parser.add_argument('--target_path',
+                    type=str,
+                    default='./utils/target_list.txt',
+                    metavar='B',
                     help='checkpoint path')
-parser.add_argument('--seed', type=int, default=1, metavar='S',
+parser.add_argument('--seed',
+                    type=int,
+                    default=1,
+                    metavar='S',
                     help='random seed (default: 1)')
-parser.add_argument('--unit_size', type=int, default=1000, metavar='N',
+parser.add_argument('--unit_size',
+                    type=int,
+                    default=1000,
+                    metavar='N',
                     help='unit size of fully connected layer')
-parser.add_argument('--update_lower', action='store_true', default=False,
+parser.add_argument('--update_lower',
+                    action='store_true',
+                    default=False,
                     help='update lower layer or not')
-parser.add_argument('--no_cuda', action='store_true', default=False,
+parser.add_argument('--no_cuda',
+                    action='store_true',
+                    default=False,
                     help='disable cuda')
 
 args = parser.parse_args()
@@ -45,21 +84,24 @@ target_data = args.target_path
 evaluation_data = args.target_path
 batch_size = args.batch_size
 data_transforms = {
-    source_data: transforms.Compose([
+    source_data:
+    transforms.Compose([
         transforms.Scale(256),
         transforms.RandomHorizontalFlip(),
         transforms.RandomCrop(224),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
-    target_data: transforms.Compose([
+    target_data:
+    transforms.Compose([
         transforms.Scale(256),
         transforms.RandomHorizontalFlip(),
         transforms.RandomCrop(224),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
-    evaluation_data: transforms.Compose([
+    evaluation_data:
+    transforms.Compose([
         transforms.Scale(256),
         transforms.CenterCrop(224),
         transforms.ToTensor(),
@@ -70,8 +112,11 @@ use_gpu = torch.cuda.is_available()
 torch.manual_seed(args.seed)
 if args.cuda:
     torch.cuda.manual_seed(args.seed)
-train_loader, test_loader = get_loader(source_data, target_data, evaluation_data,
-                                       data_transforms, batch_size=args.batch_size)
+train_loader, test_loader = get_loader(source_data,
+                                       target_data,
+                                       evaluation_data,
+                                       data_transforms,
+                                       batch_size=args.batch_size)
 dataset_train = train_loader.load_data()
 dataset_test = test_loader
 
@@ -83,7 +128,9 @@ G, C = get_model(args.net, num_class=num_class, unit_size=args.unit_size)
 if args.cuda:
     G.cuda()
     C.cuda()
-opt_c, opt_g = get_optimizer_visda(args.lr, G, C,
+opt_c, opt_g = get_optimizer_visda(args.lr,
+                                   G,
+                                   C,
                                    update_lower=args.update_lower)
 
 print(args.save_path)
@@ -104,8 +151,8 @@ def train(num_epoch):
                 img_s = data['S']
                 label_s = data['S_label']
                 img_t = data['T']
-                img_s, label_s = Variable(img_s.cuda()), \
-                                 Variable(label_s.cuda())
+                img_s, label_s = Variable(img_s.cuda()), Variable(
+                    label_s.cuda())
                 img_t = Variable(img_t.cuda())
             if len(img_t) < batch_size:
                 break
@@ -117,7 +164,8 @@ def train(num_epoch):
             out_s = C(feat)
             loss_s = criterion(out_s, label_s)
             loss_s.backward()
-            target_funk = Variable(torch.FloatTensor(img_t.size()[0], 2).fill_(0.5).cuda())
+            target_funk = Variable(
+                torch.FloatTensor(img_t.size()[0], 2).fill_(0.5).cuda())
             p = 1.0
             C.set_lambda(p)
             feat_t = G(img_t)
@@ -135,9 +183,12 @@ def train(num_epoch):
             opt_c.zero_grad()
 
             if batch_idx % args.log_interval == 0:
-                print('Train Ep: {} [{}/{} ({:.0f}%)]\tLoss Source: {:.6f}\t Loss Target: {:.6f}'.format(
-                    ep, batch_idx * len(data), 70000,
-                        100. * batch_idx / 70000, loss_s.data[0], loss_t.data[0]))
+                print('Train Ep: {} [{}/{} ({:.0f}%)]\tLoss Source: {:.6f}\t\
+                    Loss Target: {:.6f}'.format(ep, batch_idx * len(data),
+                                                70000,
+                                                100. * batch_idx / 70000,
+                                                loss_s.data[0],
+                                                loss_t.data[0]))
             if ep > 0 and batch_idx % 1000 == 0:
                 test()
                 G.train()
@@ -158,9 +209,10 @@ def test():
     per_class_correct = np.zeros((num_class)).astype(np.float32)
     for batch_idx, data in enumerate(dataset_test):
         if args.cuda:
-            img_t, label_t, path_t = data[0], data[1], data[2]
-            img_t, label_t = Variable(img_t.cuda(), volatile=True), \
-                             Variable(label_t.cuda(), volatile=True)
+            img_t, label_t, _ = data[0], data[1], data[2]
+            img_t, label_t = Variable(img_t.cuda(),
+                                      volatile=True), Variable(label_t.cuda(),
+                                                               volatile=True)
         feat = G(img_t)
         out_t = C(feat)
         pred = out_t.data.max(1)[1]
@@ -175,10 +227,9 @@ def test():
         size += k
     per_class_acc = per_class_correct / per_class_num
 
-    print(
-        '\nTest set including unknown classes:  Accuracy: {}/{} ({:.0f}%)  ({:.4f}%)\n'.format(
-            correct, size,
-            100. * correct / size, float(per_class_acc.mean())))
+    print('\nTest set including unknown classes:  \
+            Accuracy: {}/{} ({:.0f}%)  ({:.4f}%)\n'.format(
+        correct, size, 100. * correct / size, float(per_class_acc.mean())))
     for ind, category in enumerate(class_list):
         print('%s:%s' % (category, per_class_acc[ind]))
 
